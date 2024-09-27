@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Sample - GitHub User Data</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+        }
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            width: 80%;
+            max-width: 600px;
+        }
+        h1 {
+            color: #333;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #userInfo {
+            margin-top: 20px;
+        }
+        #userInfo img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+        }
+        #reposList {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        #reposList a {
+            background-color: #f4511e;
+            color: white;
+            padding: 5px 10px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        #reposList a:hover {
+            background-color: #e64a19;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>API Sample</h1>
+        <form id="githubForm">
+            <input type="text" id="username" placeholder="Github username..." required>
+            <button type="submit">Pull User Data</button>
+        </form>
+        <div id="userInfo"></div>
+    </div>
+
+    <script>
+        document.getElementById('githubForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            
+            // Clear previous data
+            document.getElementById('userInfo').innerHTML = '';
+            document.getElementById('reposList')?.remove();
+
+            fetch(`https://api.github.com/users/${username}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('User not found');
+                    }
+                    return response.json();
+                })
+                .then(userData => {
+                    const userInfo = document.getElementById('userInfo');
+                    userInfo.innerHTML = `
+                        <h2>${userData.name || 'No name available'} (@${userData.login})</h2>
+                        <img src="${userData.avatar_url}" alt="${userData.name}'s avatar">
+                        <p>Followers: ${userData.followers} - Following: ${userData.following}</p>
+                        <p>Repos: ${userData.public_repos}</p>
+                        <h3>Repos List:</h3>
+                        <div id="reposList"></div>
+                    `;
+                    return fetch(`https://api.github.com/users/${username}/repos`);
+                })
+                .then(response => response.json())
+                .then(repos => {
+                    const reposList = document.getElementById('reposList');
+                    repos.forEach(repo => {
+                        const repoLink = document.createElement('a');
+                        repoLink.href = repo.html_url;
+                        repoLink.target = '_blank';
+                        repoLink.textContent = repo.name;
+                        reposList.appendChild(repoLink);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('userInfo').innerHTML = '<p>Error fetching user data. Please try again.</p>';
+                });
+        });
+    </script>
+</body>
+</html>
